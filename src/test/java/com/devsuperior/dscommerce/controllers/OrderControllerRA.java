@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.json.JSONException;
 import org.json.simple.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,8 +22,8 @@ import io.restassured.http.ContentType;
 
 public class OrderControllerRA {
 
-    private String clientUsername, adminUsername, userPassword;
-    private String clientToken, adminToken, invalidToken;
+    private String clientUsername, adminUsername, adminOnlyUsername, userPassword;
+    private String clientToken, adminToken, adminOnlyToken, invalidToken;
     private Long existingId, nonExistingId;
     private Map<String, Object> postOrderInstance;
 
@@ -35,10 +36,12 @@ public class OrderControllerRA {
         // Validando Tokens de login dos usuários 
         clientUsername = "maria@gmail.com";
         adminUsername = "alex@gmail.com";
+        adminOnlyUsername = "ana@gmail.com";
         userPassword = "123456";
 
         clientToken = TokenUtil.obtainAccessToken(clientUsername, userPassword);
         adminToken = TokenUtil.obtainAccessToken(adminUsername, userPassword);
+        adminOnlyToken = TokenUtil.obtainAccessToken(adminOnlyUsername, userPassword);
         invalidToken = adminToken + "789";
 
         // Criando Map para representar as categories
@@ -169,29 +172,6 @@ public class OrderControllerRA {
     }
 
     @Test
-    public void insertShouldReturnOrderWhenAdminLogged() {
-
-        // Converter objeto Map para JSON
-        JSONObject newOrder = new JSONObject(postOrderInstance);
-
-        given()
-            .header("Content-type", "application/json")
-            .header("Authorization", "Bearer " + adminToken)
-            .body(newOrder)
-            .contentType(ContentType.JSON)
-            .accept(ContentType.JSON)
-        .when()
-            .post("/orders")
-        .then()
-            .statusCode(201)
-            .body("status", equalTo("WAITING_PAYMENT"))
-            .body("client.id", is(2))
-            .body("client.name", equalTo("Alex Green"))
-            .body("items.productId", hasItems(1,5))
-            .body("total", is(281.99F));
-    }
-
-    @Test
     public void insertShouldReturn422UnprocessableEntityWhenInvalidDataAdminLogged() {
 
         postOrderInstance.remove("items");
@@ -231,4 +211,20 @@ public class OrderControllerRA {
         .then()
             .statusCode(401);
     }
+
+    @Test
+	public void insertShouldReturnForbiddenWhenAdminLogged() throws JSONException {
+		JSONObject newOrder = new JSONObject(postOrderInstance);
+		
+		given()
+			.header("Content-type", "application/json")
+			.header("Authorization", "Bearer " + adminOnlyToken)
+			.contentType(ContentType.JSON)
+			.accept(ContentType.JSON)
+			.body(newOrder)
+		.when()
+			.post("/orders")
+		.then()
+			.statusCode(403);
+	}
 }
