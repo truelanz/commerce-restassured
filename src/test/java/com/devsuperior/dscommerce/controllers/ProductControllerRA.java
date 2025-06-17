@@ -109,7 +109,7 @@ public class ProductControllerRA {
             .get("/products?size=25")
         .then()
             .statusCode(200)
-            .body("content.findAll {it.price > 2000.0}.name", hasItems("PC Gamer Foo", "PC Gamer Weed"))
+            .body("content.findAll {it.price > 2000.0}.name", hasItems("PC Gamer Boo", "PC Gamer Weed"))
             .body("content.findAll {it.price > 2000.0}.size()", equalTo(7));
     }
 
@@ -138,7 +138,7 @@ public class ProductControllerRA {
     }
 
     @Test
-    public void insertShouldReturn403WhenClientLogged() {
+    public void insertShouldReturn403ForbiddenWhenClientLogged() {
 
         // Converter objeto Map para JSON
         JSONObject newProduct = new JSONObject(postProductInstance);
@@ -156,7 +156,7 @@ public class ProductControllerRA {
     }
 
     @Test
-    public void insertShouldReturn401WhenNotLogged() {
+    public void insertShouldReturn401UnauthorizedWhenNotLogged() {
 
         // Converter objeto Map para JSON
         JSONObject newProduct = new JSONObject(postProductInstance);
@@ -174,7 +174,7 @@ public class ProductControllerRA {
     }
 
     @Test
-    public void insertShouldReturn422WhenAdminLoggedAndProductInvalidName() {
+    public void insertShouldReturn422UnprocessableEntityWhenAdminLoggedAndProductInvalidName() {
 
         postProductInstance.put("name", "Me"); // invalid name
 
@@ -195,7 +195,7 @@ public class ProductControllerRA {
     }
 
     @Test
-    public void insertShouldReturn422WhenAdminLoggedAndInvalidDescription() {
+    public void insertShouldReturn422UnprocessableEntityWhenAdminLoggedAndInvalidDescription() {
 
         postProductInstance.put("description", "short"); // invalid description
 
@@ -216,7 +216,7 @@ public class ProductControllerRA {
     }
 
     @Test
-    public void insertShouldReturn422WhenAdminLoggedAndNegativePrice() {
+    public void insertShouldReturn422UnprocessableEntityWhenAdminLoggedAndNegativePrice() {
 
         postProductInstance.put("price", -10);
 
@@ -237,7 +237,7 @@ public class ProductControllerRA {
     }
 
     @Test
-    public void insertShouldReturn422WhenAdminLoggedAndPriceIsZero() {
+    public void insertShouldReturn422UnprocessableEntityWhenAdminLoggedAndPriceIsZero() {
 
         postProductInstance.put("price", 0);
         // Converter objeto Map para JSON
@@ -257,7 +257,7 @@ public class ProductControllerRA {
     }
 
     @Test
-    public void insertShouldReturn422WhenAdminLoggedAndProductHasNoCategory() {
+    public void insertShouldReturn422UnprocessableEntityWhenAdminLoggedAndProductHasNoCategory() {
 
         postProductInstance.remove("categories");
 
@@ -276,5 +276,65 @@ public class ProductControllerRA {
             .statusCode(422)
             .body("errors.message[0]", equalTo("Deve ter pelo menos uma categoria"));
     }
+    
+     @Test
+    public void deleteShould204NoContentWhenAdminLogged() {
 
+        existingId = 22L;
+
+        given()
+            .header("Authorization", "Bearer " + adminToken)
+        .when()
+            .delete("/products/{id}", existingId)
+        .then()
+            .statusCode(204);
+    }
+
+    @Test
+    public void deleteShould404NotFoundWhenNonExistingProductIdAndAdminLogged() {
+
+        given()
+            .header("Authorization", "Bearer " + adminToken)
+        .when()
+            .delete("/products/{id}", nonExistingId)
+        .then()
+            .statusCode(404)
+            .body("error", equalTo("Recurso não encontrado"));
+    }
+
+    @Test
+    public void deleteShould400WhenDependentProductIdAndAdminLogged() {
+
+        given()
+            .header("Authorization", "Bearer " + adminToken)
+        .when()
+            .delete("/products/{id}", dependentId)
+        .then()
+            .statusCode(400)
+            .body("error", equalTo("Falha de integridade referencial"));
+    }
+
+    @Test
+    public void deleteShould403ForbiddenWhenClientLogged() {
+
+        existingId = 22L;
+
+        given()
+            .header("Authorization", "Bearer " + clientToken)
+        .when()
+            .delete("/products/{id}", existingId)
+        .then()
+            .statusCode(403);
+    }
+
+    @Test
+    public void deleteShould401UnauthorizedWhenNotLogged() {
+
+        given()
+            .header("Authorization", "Bearer " + invalidToken)
+        .when()
+            .delete("/products/{id}", dependentId)
+        .then()
+            .statusCode(401);
+    }
 }
