@@ -277,6 +277,7 @@ public class ProductControllerRA {
             .body("errors.message[0]", equalTo("Deve ter pelo menos uma categoria"));
     }
     
+    /* delete */
      @Test
     public void deleteShould204NoContentWhenAdminLogged() {
 
