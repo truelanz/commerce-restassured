@@ -1,6 +1,8 @@
-## Projeto referencia para RestAssured tests
+## Projeto referencia para RestAssured tests.
 
-### RestAssured static imports
+>### Testes dos controllers do [commerce-JaCoCo-tests](https://github.com/truelanz/commerce-JaCoCo-tests)
+
+### [RestAssured](https://rest-assured.io/) static imports
 ```java
 import static io.restassured.RestAssured.*;
 import static io.restassured.matcher.ResponseAwareMatcher.*;
